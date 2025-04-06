@@ -103,26 +103,52 @@ export default function WebGISMap() {
               attribution='&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
             />
           </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name="Terrain">
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}"
+              attribution='&copy; Esri &mdash; Source: USGS, Esri, TANA, DeLorme, and NPS'
+            />
+          </LayersControl.BaseLayer>
           
           {/* Administrative Overlays */}
-          <LayersControl.Overlay name="Moldova Boundaries">
+          <LayersControl.Overlay name="Forest Districts">
             <WMSTileLayer
-              url="https://demo.geoserver.org/geoserver/wms"
-              layers="topp:states"
+              url="https://geodata.gov.md/geoserver/moldsilva/wms"
+              layers="moldsilva:fondul_silvic"
               format="image/png"
               transparent={true}
-              version="1.1.0"
+              version="1.3.0"
             />
           </LayersControl.Overlay>
           
           {/* Forest Overlays - Using demo layers since GeoServer won't be available on GitHub Pages */}
           <LayersControl.Overlay name="Forest Cover">
             <WMSTileLayer
-              url="https://demo.geoserver.org/geoserver/wms"
-              layers="sf:restricted"
+              url="https://geodata.gov.md/geoserver/moldsilva/wms"
+              layers="moldsilva:specii_de _baza2025"
+              format="image/png"
+              transparent={true}
+              version="1.3.0"
+            />
+          </LayersControl.Overlay>
+          
+          <LayersControl.Overlay name="Protected Areas">
+            <WMSTileLayer
+              url="http://localhost:8080/geoserver/Forest/wms"
+              layers="Forest:protected_areas"
               format="image/png"
               transparent={true}
               version="1.1.0"
+            />
+          </LayersControl.Overlay>
+          <LayersControl.Overlay name="Combatere daunatorilio pentru 2020 (aerian)">
+            <WMSTileLayer
+              url="https://geodata.gov.md/geoserver/moldsilva/wms"
+              layers="moldsilva:combatere_daunatorilio_pentru_2020_aerian"
+              format="image/png"
+              transparent={true}
+              version="1.3.0"
             />
           </LayersControl.Overlay>
         </LayersControl>
