@@ -1,0 +1,25 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": {
+          "name": "Sample Forest Area",
+          "forestType": "Pine",
+          "area": "125 hectares"
+        },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [24.9668, 45.9432],
+              [25.1668, 45.9432],
+              [25.1668, 46.0432],
+              [24.9668, 46.0432],
+              [24.9668, 45.9432]
+            ]
+          ]
+        }
+      }
+    ]
+  }
