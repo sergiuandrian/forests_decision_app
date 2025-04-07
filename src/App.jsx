@@ -1,19 +1,17 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import MapGIS from './map'
-import './App.css'
+import './App.css';
+import MapContainer from './components/Map/MapContainer';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-      <MapGIS />
-      </div>
-    </>
-  )
+    <div className="app-container">
+      <header className="app-header">
+        <h1>Forests Decision App</h1>
+      </header>
+      <main className="main-content">
+        <MapContainer />
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;

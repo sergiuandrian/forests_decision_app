@@ -1,95 +1,311 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { 
   MapContainer, TileLayer, WMSTileLayer, FeatureGroup, 
-  LayersControl, GeoJSON, useMapEvents
+  LayersControl, GeoJSON, useMapEvents, ZoomControl, useMap, Popup
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { EditControl } from "react-leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 import L from "leaflet";
 
-// Define the API URL - conditionally based on environment
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? null // No API in production (GitHub Pages)
-  : 'http://localhost:5000/api/gis';
+// Mock data for WMS feature info when real requests fail
+const mockFeatureData = {
+  "Forest Districts": {
+    "NAME_RO": "Codrii Centrali",
+    "AREA_HA": 24568.32,
+    "FOREST_TYPE": "Mixed Deciduous",
+    "PROTECTED": "Yes",
+    "SPECIES": "Oak, Hornbeam, Beech",
+    "MANAGEMENT": "Conservation"
+  },
+  "Forest Cover": {
+    "COVER_PCT": 75.8,
+    "DOM_SPECIES": "Quercus robur",
+    "AGE_CLASS": "80-100",
+    "DENSITY": "Medium",
+    "HEALTH": "Good"
+  },
+  "Protected Areas": {
+    "AREA_NAME": "Rezervație Naturală",
+    "IUCN_CAT": "IV",
+    "ESTABLISHED": "1993",
+    "PROTECTION": "Strict",
+    "DESCRIPTION": "Forest ecosystem protection zone"
+  }
+};
 
-// Import sample data for production mode
-import sampleDataImport from './mockData/sampleData.json';
+// Component to set Moldova view on initialization
+function InitialView() {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (map) {
+      // Set view to Moldova 
+      const moldovaCenter = [47.0105, 28.8638]; // Coordinates for Moldova
+      const zoomLevel = 8; // Zoom level to show most of Moldova
+      
+      map.setView(moldovaCenter, zoomLevel);
+      
+      // Add a boundary for Moldova to help with orientation
+      const moldovaBounds = L.latLngBounds(
+        [48.4902, 26.6162], // Northeast corner
+        [45.4686, 30.1354]  // Southwest corner
+      );
+      
+      // Fit bounds with padding to ensure Moldova is visible
+      map.fitBounds(moldovaBounds, {
+        padding: [20, 20],
+        maxZoom: 8
+      });
+    }
+  }, [map]);
+
+  return null;
+}
+
+// Component to handle WMS GetFeatureInfo using direct WMS layer extension
+function WmsDirectFeatureInfo() {
+  const map = useMap();
+  const [popupPosition, setPopupPosition] = useState(null);
+  const [popupContent, setPopupContent] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeWmsLayer, setActiveWmsLayer] = useState(null);
+  
+  useEffect(() => {
+    if (!map) return;
+    
+    // Track active WMS layer
+    const handleLayerChange = () => {
+      let activeLayer = null;
+      map.eachLayer(layer => {
+        if (layer._url && layer.wmsParams && layer.options && layer.options.opacity > 0) {
+          activeLayer = layer;
+        }
+      });
+      setActiveWmsLayer(activeLayer);
+    };
+    
+    // Listen for layer changes
+    map.on('layeradd', handleLayerChange);
+    map.on('layerremove', handleLayerChange);
+    
+    // Initial check
+    handleLayerChange();
+    
+    // Cleanup
+    return () => {
+      map.off('layeradd', handleLayerChange);
+      map.off('layerremove', handleLayerChange);
+    };
+  }, [map]);
+  
+  useEffect(() => {
+    if (!map) return;
+    
+    // Define the getFeatureInfoUrl function
+    function getFeatureInfoUrl(latlng, layer) {
+      if (!layer || !layer._url || !layer.wmsParams) return null;
+      
+      // Make a point on the screen
+      const point = map.latLngToContainerPoint(latlng);
+      
+      // Get the map size
+      const size = map.getSize();
+      
+      // Get current bounds
+      const bounds = map.getBounds();
+      const sw = bounds.getSouthWest();
+      const ne = bounds.getNorthEast();
+      
+      // Format bbox properly based on WMS version
+      let bbox;
+      if (layer.wmsParams.version === '1.3.0') {
+        bbox = `${sw.lat},${sw.lng},${ne.lat},${ne.lng}`;
+      } else {
+        bbox = `${sw.lng},${sw.lat},${ne.lng},${ne.lat}`;
+      }
+      
+      // Parameters for GetFeatureInfo
+      const params = {
+        service: 'WMS',
+        version: layer.wmsParams.version || '1.3.0',
+        request: 'GetFeatureInfo',
+        layers: layer.wmsParams.layers,
+        query_layers: layer.wmsParams.layers,
+        bbox: bbox,
+        width: size.x,
+        height: size.y,
+        format: 'image/png',
+        info_format: 'application/json',
+        feature_count: 10,
+        srs: 'EPSG:4326',
+        crs: 'EPSG:4326'
+      };
+      
+      // Add coordinates differently based on WMS version
+      if (params.version === '1.3.0') {
+        params.i = Math.round(point.x);
+        params.j = Math.round(point.y);
+      } else {
+        params.x = Math.round(point.x);
+        params.y = Math.round(point.y);
+      }
+      
+      // Format URL
+      return layer._url + L.Util.getParamString(params, layer._url);
+    }
+    
+    // Function to fetch feature info
+    async function fetchFeatureInfo(url, layerName) {
+      try {
+        if (!url) return null;
+        
+        console.log(`Fetching info for ${layerName} from:`, url);
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json, text/plain, */*'
+          }
+        });
+        
+        console.log("Response status:", response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return formatFeatureInfo(data, layerName);
+      } catch (error) {
+        console.error("Error fetching feature info:", error);
+        return `<p>Error loading feature information</p>`;
+      }
+    }
+    
+    // Format the feature info for display
+    function formatFeatureInfo(data, layerName) {
+      if (data.features && data.features.length > 0) {
+        const feature = data.features[0];
+        const properties = feature.properties;
+        
+        // Define the properties we want to display
+        const displayProperties = {
+          "intreprinderea_silvica": "Forest Enterprise",
+          "trupul": "Forest Unit",
+          "proprietate": "Ownership",
+          "suprafata": "Area"
+        };
+        
+        let content = `<h4>${layerName}</h4>`;
+        content += "<table>";
+        
+        // Only display the properties we're interested in
+        for (const [key, label] of Object.entries(displayProperties)) {
+          if (properties[key] !== null && properties[key] !== undefined) {
+            content += `<tr><th>${label}</th><td>${properties[key]}</td></tr>`;
+          }
+        }
+        
+        content += "</table>";
+        return content;
+      } else if (data.text) {
+        return `<h4>${layerName}</h4><div>${data.text}</div>`;
+      } else {
+        return `<p>No features found in ${layerName}</p>`;
+      }
+    }
+    
+    // Handle map click
+    const handleMapClick = async (e) => {
+      if (!activeWmsLayer) {
+        console.log("No active WMS layer found");
+        return;
+      }
+      
+      const url = getFeatureInfoUrl(e.latlng, activeWmsLayer);
+      if (!url) {
+        console.log("Could not generate GetFeatureInfo URL");
+        return;
+      }
+      
+      setIsLoading(true);
+      setPopupPosition(e.latlng);
+      setPopupContent("Loading feature information...");
+      
+      try {
+        const content = await fetchFeatureInfo(url, activeWmsLayer.wmsParams.layers);
+        if (content) {
+          setPopupContent(content);
+        } else {
+          setPopupContent("No feature information available");
+        }
+      } catch (error) {
+        console.error("Error handling map click:", error);
+        setPopupContent("Error loading feature information");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    map.on('click', handleMapClick);
+    
+    return () => {
+      map.off('click', handleMapClick);
+    };
+  }, [map, activeWmsLayer]);
+  
+  return popupPosition ? (
+    <Popup position={popupPosition} onClose={() => setPopupPosition(null)}>
+      {isLoading ? (
+        <div>Loading feature information...</div>
+      ) : (
+        <div dangerouslySetInnerHTML={{ __html: popupContent }} />
+      )}
+    </Popup>
+  ) : null;
+}
+
+// Format mock feature data for display
+function formatMockFeatureInfo(layerName) {
+  console.log("Formatting mock data for", layerName);
+  const layerKey = layerName.includes(":") ? 
+    layerName.split(":")[1] : layerName;
+    
+  // Try to find a matching mock data key
+  const mockDataKey = Object.keys(mockFeatureData).find(key => 
+    layerKey.toLowerCase().includes(key.toLowerCase())
+  ) || Object.keys(mockFeatureData)[0]; // Fallback to first key
+  
+  const properties = mockFeatureData[mockDataKey];
+  
+  let content = `<h4>${layerName} <span class="mock-indicator">(Mock Data)</span></h4>`;
+  content += "<table>";
+  for (const key in properties) {
+    content += `<tr><th>${key}</th><td>${properties[key]}</td></tr>`;
+  }
+  content += "</table>";
+  return content;
+}
 
 export default function WebGISMap() {
-  const [geoJsonData, setGeoJsonData] = useState(null);
   const [mapInstance, setMapInstance] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    console.log("Map initialized");
-    
-    // Load sample data if in production (GitHub Pages)
-    if (process.env.NODE_ENV === 'production') {
-      setGeoJsonData(sampleDataImport);
-    }
-  }, []);
-  
-  // Handle file upload - using localStorage for persistence
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      try {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const geoJson = JSON.parse(e.target.result);
-            
-            // Basic validation
-            if (!geoJson.type || !geoJson.features) {
-              setError("Invalid GeoJSON format");
-              return;
-            }
-            
-            // Set data and save to localStorage
-            setGeoJsonData(geoJson);
-            localStorage.setItem('forestGeoJson', JSON.stringify(geoJson));
-          } catch (error) {
-            console.error("Invalid GeoJSON file", error);
-            setError("Invalid GeoJSON format");
-          }
-        };
-        reader.readAsText(file);
-      } catch (error) {
-        console.error("Error handling file upload:", error);
-        setError("Error uploading file");
-      }
-    }
-  };
-
-  // Load data from localStorage on component mount
-  useEffect(() => {
-    const savedData = localStorage.getItem('forestGeoJson');
-    if (savedData) {
-      try {
-        setGeoJsonData(JSON.parse(savedData));
-      } catch (e) {
-        console.error("Error parsing saved GeoJSON", e);
-      }
-    }
-  }, []);
 
   return (
-    <div className="h-screen w-full relative">
-      <input 
-        type="file" 
-        accept=".geojson" 
-        onChange={handleFileUpload} 
-        className="absolute top-2 left-2 bg-white p-2 z-10 border border-gray-300 rounded-md shadow-md" 
-      />
-      
-      {loading && <div className="absolute top-2 right-2 bg-white p-2 z-10 border border-gray-300 rounded-md shadow-md">Loading...</div>}
-      {error && <div className="absolute top-2 right-2 bg-white p-2 z-10 border border-red-300 rounded-md shadow-md text-red-500">{error}</div>}
-      
-      <MapContainer center={[45.9432, 24.9668]} zoom={7} className="mapcont h-full w-full" whenCreated={setMapInstance}>
-        <LayersControl position="topright">
-          {/* Base Layers */}
+    <div className="map-container">
+      <MapContainer 
+        center={[47.0105, 28.8638]} // Moldova's center coordinates
+        zoom={8} 
+        style={{ height: "100%", width: "100%" }}
+        whenCreated={setMapInstance}
+        zoomControl={false}
+      >
+        <InitialView />
+        <WmsDirectFeatureInfo />
+        <ZoomControl position="topright" />
+        
+        {/* Base Layers */}
+        <LayersControl position="topleft" collapsed={false}>
           <LayersControl.BaseLayer checked name="OpenStreetMap">
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -122,7 +338,7 @@ export default function WebGISMap() {
             />
           </LayersControl.Overlay>
           
-          {/* Forest Overlays - Using demo layers since GeoServer won't be available on GitHub Pages */}
+          {/* Forest Overlays */}
           <LayersControl.Overlay name="Forest Cover">
             <WMSTileLayer
               url="https://geodata.gov.md/geoserver/moldsilva/wms"
@@ -135,42 +351,14 @@ export default function WebGISMap() {
           
           <LayersControl.Overlay name="Protected Areas">
             <WMSTileLayer
-              url="http://localhost:8080/geoserver/Forest/wms"
-              layers="Forest:protected_areas"
-              format="image/png"
-              transparent={true}
-              version="1.1.0"
-            />
-          </LayersControl.Overlay>
-          <LayersControl.Overlay name="Combatere daunatorilio pentru 2020 (aerian)">
-            <WMSTileLayer
               url="https://geodata.gov.md/geoserver/moldsilva/wms"
-              layers="moldsilva:combatere_daunatorilio_pentru_2020_aerian"
+              layers="moldsilva:protected_areas"
               format="image/png"
               transparent={true}
               version="1.3.0"
             />
           </LayersControl.Overlay>
         </LayersControl>
-
-        {geoJsonData && <GeoJSON data={geoJsonData} />} 
-        
-        {/* <FeatureGroup>
-          <EditControl
-            position="topright"
-            draw={{
-              rectangle: true,
-              circle: true,
-              polygon: true,
-              polyline: true,
-              marker: true,
-            }}
-            edit={{
-              remove: true,
-              edit: true,
-            }}
-          />
-        </FeatureGroup> */}
       </MapContainer>
     </div>
   );

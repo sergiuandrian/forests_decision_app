@@ -1,0 +1,95 @@
+/* Layer control styles */
+.leaflet-control-layers {
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+
+.leaflet-control-layers-expanded {
+  color: #333;
+  background: white;
+  padding: 6px 10px 6px 6px;
+  min-width: 200px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.leaflet-control-layers-toggle {
+  width: 48px;
+  height: 48px;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAA0CAYAAADFeBvrAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAATmSURBVGiB7ZpfaM1hGMc/Z9NkbHJKymSt1ChzQcqFC1e4kIu5seLChQuuduNCaQolrpbkgpKb3chfJH+yNdIYMxeKpoT5l7GZY8/F+f7O+Z3znnPe97fn/K7efOt0zvv8nu/3fd7f+z7P874B48aNk2PmMAKryiTbQl8rwGIgDUwE8kA/8BH4BPTJtKsWAsABxSAXpQxntGiDQAewGxjrY9w7gTaPsRpFqcUgrqIW48v2XD0Tn52mXmQxCpn2DAIfeK20m/goZEYKVdqzeAMXgckR+x3gK9Jc3o/oy0wQb8d0MBDRbybwLaJPvSnFIDOAIuaa6Y0wxEkP9t3EUyEzUqAGGSPXOjM4bPb9iVrOEw6F5Lx3YI3rN9Ah8BXpDLJe4nW0bpHFKGQ6exnRxzavsZoofhfT+1Gt77SGPzlNsIxxbvDZdQKX8V7nRdFBOAYVgbeR75Gm+C8KlEOqgfL8+XsaaAXOenS7iPB8jVoS54G0Abt9OquVjSXd8UlcBUCLKOg3/iSMQmD/ngm0ENwrUcvzq0jdsMrzOC7iyonI4OvSQP9qv1vPGc48aSK3fT/zqQ9LQUvDjRQbkYxQSi3wDKgJGdcmH/NpFFeMQrJ7Gw0xR5GBHpYaX1tzxaglpTNMNb8pz7pQJ8rnYZwFYJFM+9yBQOMgkpbdcBDWK/fzwGzl3h77tNq5WDqbKsVbJAVa8QHI6TwTSJmOqoyQxE4xM2pQ7puBxqAt/kZu2C4rz33AE+AMUFK+5xq3UYVQpLfCdpNSn9f9XZMKdvhMuIakdTgM1CO9jNNmVqT/b5VncpExDHQBdUAPUilZMC/wGLG9UcVLJIXaNaUuYZvJsb0W9G8Cbpg3Wge8C5j4LZLmk2IZ0jcbUu7btBtqJnDBbKwdOBA4kxc2IOnbyQSl82fkO3FDeT6EJJIlpjwHmoCtyPxSuYTtE0vkqyLvF2C3cg9gggl2PbAOaTQG0QKcRSZCqyBZRZQ1HtspZOp2GzDBfN8uJDVGWQ/cQopHJ7tM3C2EdwoUgLPIdO9B8nueYBXOUmA1UqWtA1aZNhvyOtCF+k/JGaQA7AvQRwFJt0Y0G0zbcmB9SB+/UaxC0ptaXFRhy/Yo1iKDwYk2gY1YhcBa4SxFdrx6AzquRjpcp5WRFWfaKaQqdkHN3BU+W1ZOJeY31GiCq4tNF1pJdE4pQ6lx/+lM1mBLaXL+dLZMKVNOE1dOtFNLU4JrglXDTi01JR5HvIOeQ8o8mwRpkmZYQ0B9SKMa+T91qV7O0izPcwhMQVJ5KVImNiPVsLWvEdNuaB64E+B3J1LQpb1jqF9hfckRnDJ2AG/EZ2egVohUlUAVMs8/Y/u73XRYDSw374+STEVcixQXvea6YZ+5XYk1bDVyGlAjyVZrUNpdxdoW9iBpN2q0Uh4TS0eUSicBm4GvGCNL5LF6Zz8lQ/IM8BPJ2zzFWrFdR850B5BdwR2sKXxYG7c/USykLnQj1awf7czZxCDEaeBRwLHmCZ45w6ZQA+V5djtDsAqZQO1UYl7fXjGPzQHHasQ+Jx1osQ+qFjgqj51mjuWDfP4BcTNyUj4MqRLAAAAAASUVORK5CYII=);
+  background-size: 26px 26px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.leaflet-control-layers-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaflet-control-layers-base {
+  padding-bottom: 5px;
+}
+
+.leaflet-control-layers-overlays {
+  border-top: 1px solid #ddd;
+  padding-top: 5px;
+}
+
+.leaflet-control-layers-separator {
+  height: 0;
+  border-top: 1px solid #ddd;
+  margin: 5px -10px 5px -6px;
+}
+
+.leaflet-control-layers-selector {
+  margin-top: 2px;
+  position: relative;
+  top: 1px;
+}
+
+.leaflet-control-layers label {
+  display: block;
+  padding: 3px;
+  border-radius: 3px;
+}
+
+.leaflet-control-layers label:hover {
+  background-color: #f4f4f4;
+}
+
+/* Add section titles */
+.leaflet-control-layers-base::before {
+  content: "Base Maps";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.leaflet-control-layers-overlays::before {
+  content: "Forest Layers";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+/* Custom scrollbar for better usability */
+.leaflet-control-layers-expanded::-webkit-scrollbar {
+  width: 6px;
+}
+
+.leaflet-control-layers-expanded::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.leaflet-control-layers-expanded::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.leaflet-control-layers-expanded::-webkit-scrollbar-thumb:hover {
+  background: #555;
+} 
