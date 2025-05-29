@@ -1,12 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { 
   MapContainer, TileLayer, WMSTileLayer, FeatureGroup, 
-  LayersControl, GeoJSON, useMapEvents, ZoomControl, useMap, Popup
+  LayersControl, GeoJSON, useMapEvents, ZoomControl, useMap, Popup, Marker
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { EditControl } from "react-leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw.css";
 import L from "leaflet";
+import GeostoreAnalysis from "./components/ForestAnalysis/GeostoreAnalysis";
+import { Box, Paper } from "@mui/material";
+import { getGeostoreDetails } from "./services/gfwService";
 
 // Mock data for WMS feature info when real requests fail
 const mockFeatureData = {
@@ -288,78 +291,281 @@ function formatMockFeatureInfo(layerName) {
   return content;
 }
 
-export default function WebGISMap() {
-  const [mapInstance, setMapInstance] = useState(null);
+// Component to display geostore polygon
+function GeostorePolygon({ geostoreId }) {
+  const [polygonData, setPolygonData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPolygon = async () => {
+      try {
+        setLoading(true);
+        console.log('Starting to fetch polygon for geostore:', geostoreId);
+        
+        // Test the API endpoint directly
+        const testResponse = await fetch(`/api/gfw/geostore/${geostoreId}`);
+        console.log('Direct API test response status:', testResponse.status);
+        const testData = await testResponse.json();
+        console.log('Direct API test data:', testData);
+
+        // Now try the service call
+        const response = await getGeostoreDetails(geostoreId);
+        console.log('Service call response:', response);
+        
+        if (!response || !response.data) {
+          throw new Error('Invalid response from geostore service');
+        }
+
+        const geojson = response.data?.attributes?.geojson;
+        if (!geojson) {
+          console.error('No geojson in response:', response);
+          throw new Error('No geojson data in response');
+        }
+
+        // Validate the geojson structure
+        if (!geojson.type || !geojson.features) {
+          console.error('Invalid geojson structure:', geojson);
+          throw new Error('Invalid geojson structure');
+        }
+
+        console.log('Setting valid polygon data:', geojson);
+        setPolygonData(geojson);
+      } catch (err) {
+        console.error('Error in fetchPolygon:', err);
+        setError(err.message || 'Failed to fetch polygon data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (geostoreId) {
+      fetchPolygon();
+    }
+  }, [geostoreId]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div style={{ 
+        position: 'absolute', 
+        top: '50%', 
+        left: '50%', 
+        transform: 'translate(-50%, -50%)',
+        zIndex: 1000,
+        background: 'white',
+        padding: '10px',
+        borderRadius: '4px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+      }}>
+        Loading polygon data...
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div style={{ 
+        position: 'absolute', 
+        top: '50%', 
+        left: '50%', 
+        transform: 'translate(-50%, -50%)',
+        zIndex: 1000,
+        background: '#ffebee',
+        padding: '10px',
+        borderRadius: '4px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+        color: '#c62828'
+      }}>
+        Error: {error}
+      </div>
+    );
+  }
+
+  // Show when no data
+  if (!polygonData) {
+    return (
+      <div style={{ 
+        position: 'absolute', 
+        top: '50%', 
+        left: '50%', 
+        transform: 'translate(-50%, -50%)',
+        zIndex: 1000,
+        background: '#fff3e0',
+        padding: '10px',
+        borderRadius: '4px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+        color: '#ef6c00'
+      }}>
+        No polygon data available
+      </div>
+    );
+  }
+
+  console.log('About to render GeoJSON with data:', polygonData);
 
   return (
-    <div className="map-container">
-      <MapContainer 
-        center={[47.0105, 28.8638]} // Moldova's center coordinates
-        zoom={8} 
-        style={{ height: "100%", width: "100%" }}
-        whenCreated={setMapInstance}
-        zoomControl={false}
-      >
-        <InitialView />
-        <WmsDirectFeatureInfo />
-        <ZoomControl position="topright" />
-        
-        {/* Base Layers */}
-        <LayersControl position="topleft" collapsed={false}>
-          <LayersControl.BaseLayer checked name="OpenStreetMap">
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-          </LayersControl.BaseLayer>
-          
-          <LayersControl.BaseLayer name="Satellite">
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              attribution='&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-            />
-          </LayersControl.BaseLayer>
+    <>
+      <GeoJSON 
+        key={geostoreId} // Force re-render when geostoreId changes
+        data={polygonData}
+        style={{
+          color: '#ff0000',
+          weight: 3,
+          fillColor: '#ff0000',
+          fillOpacity: 0.3
+        }}
+        eventHandlers={{
+          click: (e) => {
+            const layer = e.target;
+            layer.bindPopup(`
+              <div>
+                <h4>Geostore Area</h4>
+                <p>Area: ${(polygonData.attributes?.areaHa / 100).toFixed(2)} km²</p>
+              </div>
+            `).openPopup();
+          }
+        }}
+      />
+      {/* Add a marker at the center of the polygon for debugging */}
+      {polygonData.bbox && (
+        <Marker 
+          position={[
+            (polygonData.bbox[1] + polygonData.bbox[3]) / 2,
+            (polygonData.bbox[0] + polygonData.bbox[2]) / 2
+          ]}
+        >
+          <Popup>
+            <div>Polygon Center</div>
+          </Popup>
+        </Marker>
+      )}
+    </>
+  );
+}
 
-          <LayersControl.BaseLayer name="Terrain">
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}"
-              attribution='&copy; Esri &mdash; Source: USGS, Esri, TANA, DeLorme, and NPS'
-            />
-          </LayersControl.BaseLayer>
+export default function WebGISMap() {
+  const [mapInstance, setMapInstance] = useState(null);
+  const [selectedGeostoreId, setSelectedGeostoreId] = useState("3af540d618da092dc8d6a250f013aed7"); // Set the geostore ID
+  const [drawnItems, setDrawnItems] = useState(new L.FeatureGroup());
+  const [showAnalysis, setShowAnalysis] = useState(true); // Show analysis by default
+
+  const onCreated = useCallback((e) => {
+    const layer = e.layer;
+    drawnItems.addLayer(layer);
+
+    // Get the bounds of the drawn polygon
+    const bounds = layer.getBounds();
+    const coordinates = layer.getLatLngs()[0].map(latLng => [latLng.lat, latLng.lng]);
+    
+    // Create a geostore with the drawn polygon
+    const createGeostore = async () => {
+      try {
+        const response = await fetch('/api/gfw/geostore', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            geojson: {
+              type: 'Polygon',
+              coordinates: [coordinates]
+            }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create geostore');
+        }
+
+        const data = await response.json();
+        setSelectedGeostoreId(data.data.id);
+        setShowAnalysis(true);
+      } catch (error) {
+        console.error('Error creating geostore:', error);
+      }
+    };
+
+    createGeostore();
+  }, [drawnItems]);
+
+  return (
+    <Box sx={{ display: 'flex', height: '100vh' }}>
+      <Box sx={{ flex: 1, position: 'relative' }}>
+        <MapContainer
+          center={[47.0105, 28.8638]}
+          zoom={8}
+          style={{ height: '100%', width: '100%' }}
+          whenCreated={setMapInstance}
+          zoomControl={false}
+        >
+          {/* Base Layers */}
+          <LayersControl position="topleft" collapsed={false}>
+            <LayersControl.BaseLayer checked name="OpenStreetMap">
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+            </LayersControl.BaseLayer>
+            
+            <LayersControl.BaseLayer name="Satellite">
+              <TileLayer
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                attribution='&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+              />
+            </LayersControl.BaseLayer>
+
+            <LayersControl.BaseLayer name="Terrain">
+              <TileLayer
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}"
+                attribution='&copy; Esri &mdash; Source: USGS, Esri, TANA, DeLorme, and NPS'
+              />
+            </LayersControl.BaseLayer>
+          </LayersControl>
+
+          {/* Add the GeostorePolygon component */}
+          {selectedGeostoreId && (
+            <>
+              <GeostorePolygon geostoreId={selectedGeostoreId} />
+              <FeatureGroup>
+                <EditControl
+                  position="topright"
+                  onCreated={onCreated}
+                  onEdited={onEdited}
+                  onDeleted={onDeleted}
+                  draw={{
+                    rectangle: false,
+                    circle: false,
+                    circlemarker: false,
+                    marker: false,
+                    polyline: false
+                  }}
+                />
+              </FeatureGroup>
+            </>
+          )}
           
-          {/* Administrative Overlays */}
-          <LayersControl.Overlay name="Forest Districts">
-            <WMSTileLayer
-              url="https://geodata.gov.md/geoserver/moldsilva/wms"
-              layers="moldsilva:fondul_silvic"
-              format="image/png"
-              transparent={true}
-              version="1.3.0"
-            />
-          </LayersControl.Overlay>
-          
-          {/* Forest Overlays */}
-          <LayersControl.Overlay name="Forest Cover">
-            <WMSTileLayer
-              url="https://geodata.gov.md/geoserver/moldsilva/wms"
-              layers="moldsilva:specii_de _baza2025"
-              format="image/png"
-              transparent={true}
-              version="1.3.0"
-            />
-          </LayersControl.Overlay>
-          
-          <LayersControl.Overlay name="Protected Areas">
-            <WMSTileLayer
-              url="https://geodata.gov.md/geoserver/moldsilva/wms"
-              layers="moldsilva:protected_areas"
-              format="image/png"
-              transparent={true}
-              version="1.3.0"
-            />
-          </LayersControl.Overlay>
-        </LayersControl>
-      </MapContainer>
-    </div>
+          <ZoomControl position="bottomright" />
+          <InitialView />
+          <WmsDirectFeatureInfo />
+        </MapContainer>
+      </Box>
+
+      {showAnalysis && selectedGeostoreId && (
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            width: 400, 
+            height: '100%', 
+            overflow: 'auto',
+            p: 2,
+            backgroundColor: 'background.paper'
+          }}
+        >
+          <GeostoreAnalysis geostoreId={selectedGeostoreId} />
+        </Paper>
+      )}
+    </Box>
   );
 }

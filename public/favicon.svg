@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tree trunk -->
+  <rect x="14" y="20" width="4" height="8" fill="#8B4513"/>
+  <!-- Tree crown -->
+  <path d="M16 4 L8 20 L24 20 Z" fill="#228B22"/>
+  <path d="M16 8 L10 20 L22 20 Z" fill="#228B22"/>
+  <path d="M16 12 L12 20 L20 20 Z" fill="#228B22"/>
+</svg> 

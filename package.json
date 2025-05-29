@@ -13,12 +13,15 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@types/leaflet-draw": "^1.0.12",
+    "axios": "^1.9.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "prop-types": "^15.8.1",
     "react": "^19.0.0-rc.1",
+    "react-daterange-picker": "^2.0.1",
     "react-dom": "^19.0.0-rc.1",
-    "react-leaflet": "^5.0.0-rc.2",
+    "react-leaflet": "^5.0.0",
     "react-leaflet-draw": "^0.20.6"
   },
   "devDependencies": {
