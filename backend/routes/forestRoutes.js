@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const forestController = require('../controllers/forestController');
 
+// Get forest units (hotar) data
+router.get('/units', forestController.getForestUnits);
+
+// Get forest stands (padure) data
+router.get('/stands', forestController.getForestStands);
+
 // Get forest data with optional filtering
 // Query parameters:
 // - minArea: minimum area

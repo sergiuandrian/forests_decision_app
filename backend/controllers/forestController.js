@@ -170,7 +170,109 @@ const getForestAnalysisByProperty = async (req, res) => {
   }
 };
 
+// Get forest units (hotar) data
+const getForestUnits = async (req, res) => {
+  try {
+    const { minx, miny, maxx, maxy } = req.query;
+    
+    let query = `
+      SELECT 
+        h.id,
+        h.denumire as name,
+        h.aria as area,
+        h.proprietate as property_type,
+        h.management as management_type,
+        ST_AsGeoJSON(h.geom)::json as geometry
+      FROM hotar h
+    `;
+    
+    const params = [];
+    let paramCount = 1;
+    
+    if (minx && miny && maxx && maxy) {
+      query += ` WHERE ST_Intersects(h.geom, ST_MakeEnvelope($${paramCount}, $${paramCount + 1}, $${paramCount + 2}, $${paramCount + 3}, 4326))`;
+      params.push(minx, miny, maxx, maxy);
+    }
+    
+    const result = await pool.query(query, params);
+    
+    const features = result.rows.map(row => ({
+      type: 'Feature',
+      geometry: row.geometry,
+      properties: {
+        id: row.id,
+        name: row.name,
+        area: row.area,
+        property_type: row.property_type,
+        management_type: row.management_type
+      }
+    }));
+
+    res.json({
+      type: 'FeatureCollection',
+      features: features
+    });
+  } catch (error) {
+    console.error('Error fetching forest units:', error);
+    res.status(500).json({ error: 'Error fetching forest units' });
+  }
+};
+
+// Get forest stands (padure) data
+const getForestStands = async (req, res) => {
+  try {
+    const { minx, miny, maxx, maxy } = req.query;
+    
+    let query = `
+      SELECT 
+        p.id,
+        p.trupul as forest_unit,
+        p.ua as management_unit,
+        p.suprafata as area,
+        p.vrt as volume,
+        p.cns as forest_type,
+        p.proprietat as property_type,
+        ST_AsGeoJSON(p.geom)::json as geometry
+      FROM padure p
+    `;
+    
+    const params = [];
+    let paramCount = 1;
+    
+    if (minx && miny && maxx && maxy) {
+      query += ` WHERE ST_Intersects(p.geom, ST_MakeEnvelope($${paramCount}, $${paramCount + 1}, $${paramCount + 2}, $${paramCount + 3}, 4326))`;
+      params.push(minx, miny, maxx, maxy);
+    }
+    
+    const result = await pool.query(query, params);
+    
+    const features = result.rows.map(row => ({
+      type: 'Feature',
+      geometry: row.geometry,
+      properties: {
+        id: row.id,
+        forest_unit: row.forest_unit,
+        management_unit: row.management_unit,
+        area: row.area,
+        volume: row.volume,
+        forest_type: row.forest_type,
+        property_type: row.property_type
+      }
+    }));
+
+    res.json({
+      type: 'FeatureCollection',
+      features: features
+    });
+  } catch (error) {
+    console.error('Error fetching forest stands:', error);
+    res.status(500).json({ error: 'Error fetching forest stands' });
+  }
+};
+
 module.exports = {
+  getForestUnits,
+  getForestStands,
   getForestData,
   getForestStats,
   getForestBoundaries,

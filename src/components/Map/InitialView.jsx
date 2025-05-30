@@ -8,10 +8,9 @@ function InitialView() {
   
   useEffect(() => {
     if (map) {
-      // Define Moldova bounds
       const moldovaBounds = L.latLngBounds(
-        [48.4902, 26.6162], // Northeast corner
-        [45.4686, 30.1354]  // Southwest corner
+        [48.4902, 26.6162],
+        [45.4686, 30.1354]
       );
       
       // Fit map to Moldova bounds with padding
@@ -21,14 +20,12 @@ function InitialView() {
         animate: true
       });
 
-      // Enable necessary interactions for better user experience
+      map.invalidateSize();
       map.touchZoom.enable();
       map.doubleClickZoom.enable();
       map.scrollWheelZoom.enable();
       map.boxZoom.enable();
       map.keyboard.enable();
-      
-      // Set minimum and maximum zoom levels
       map.setMinZoom(6);
       map.setMaxZoom(18);
     }

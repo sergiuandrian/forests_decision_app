@@ -2,7 +2,30 @@
  * API service module for handling all server communications
  */
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Create axios instance
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
+});
+
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  response => response,
+  error => {
+    console.error('API Error:', error.response || error);
+    return Promise.reject(error);
+  }
+);
+
+export { api };
+export default api;
 
 /**
  * Make a GET request to the API

@@ -29,7 +29,7 @@ export const WMS_LAYERS = [
     version: "1.1.1",
     opacity: 0.7,
     zIndex: 10,
-    checked: true
+    checked: false
   },
   {
     name: "Forest Cover",
@@ -40,7 +40,7 @@ export const WMS_LAYERS = [
     version: "1.1.1",
     opacity: 0.7,
     zIndex: 20,
-    checked: true
+    checked: false
   },
   {
     name: "Protected Areas",
@@ -51,7 +51,7 @@ export const WMS_LAYERS = [
     version: "1.1.1",
     opacity: 0.7,
     zIndex: 30,
-    checked: true
+    checked: false
   }
 ];
 

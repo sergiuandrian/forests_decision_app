@@ -1,5 +1,5 @@
 import './App.css';
-import MapContainer from './components/Map/MapContainer';
+import WebGISMap from './map';
 
 function App() {
   return (
@@ -8,7 +8,7 @@ function App() {
         <h1>Forests Decision App</h1>
       </header>
       <main className="main-content">
-        <MapContainer />
+        <WebGISMap />
       </main>
     </div>
   );

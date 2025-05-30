@@ -24,7 +24,13 @@ app.use(express.urlencoded({ extended: true }));
 initDb()
   .then(() => {
     console.log('Database and PostGIS initialized successfully');
-    // Start server only after database is initialized
+    
+    // Register routes after database is initialized
+    app.use('/api/gis', gisRoutes);
+    app.use('/api/forest', forestRoutes);
+    app.use('/api/analysis', analysisRoutes);
+
+    // Start server only after database is initialized and routes are registered
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
@@ -42,11 +48,6 @@ require('fs').mkdirSync(rastersDir, { recursive: true });
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Routes
-app.use('/api/gis', gisRoutes);
-app.use('/api/forest', forestRoutes);
-app.use('/api/analysis', analysisRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
