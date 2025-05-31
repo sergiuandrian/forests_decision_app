@@ -1,3 +1,27 @@
+/* Modern color scheme */
+:root {
+  /* Primary colors */
+  --primary-color: #34a853;      /* Modern blue */
+  --secondary-color: #34a853;    /* Forest green */
+  --accent-color: #fbbc04;       /* Warm yellow */
+  
+  /* Neutral colors */
+  --background-color: #ffffff;
+  --surface-color: #f8f9fa;
+  --text-color: #202124;
+  --text-secondary: #5f6368;
+  
+  /* Border and shadow */
+  --border-color: #dadce0;
+  --shadow-color: rgba(60, 64, 67, 0.15);
+  
+  /* Status colors */
+  --error-color: #ea4335;
+  --success-color: #34a853;
+  --warning-color: #fbbc04;
+  --info-color: #4285f4;
+}
+
 /* Reset and base styles */
 * {
   margin: 0;
@@ -31,23 +55,70 @@ body {
   height: 100vh;
   width: 100vw;
   position: relative;
+  background-color: var(--background-color);
 }
 
 /* Header styles */
 .app-header {
-  background-color: #2c3e50;
+  background-color: var(--primary-color);
   color: white;
   padding: 0.75rem 1.5rem;
-  height: 60px;
+  min-height: 70px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow-color);
   z-index: 1000;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .app-header h1 {
   font-size: 1.5rem;
   font-weight: 600;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.header-nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.nav-button {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.nav-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.nav-button .icon {
+  font-size: 1.1rem;
+}
+
+.nav-button .nav-text {
+  font-size: 0.9rem;
 }
 
 /* Debug controls */
@@ -80,35 +151,42 @@ body {
 .main-content {
   flex: 1;
   position: relative;
-  height: calc(100vh - 60px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+}
+
+/* Map container styles */
+.map-container {
+  position: relative;
+  flex-grow: 1;
+  min-width: 0;
 }
 
 /* Map wrapper */
-.map-wrapper {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
+/* .map-wrapper { */
+/*   flex-grow: 1; */
+/* } */
 
 /* Layer control positioning */
-.layer-control {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 1000;
-}
+/* .layer-control { */
+/*   position: absolute; */
+/*   top: 10px; */
+/*   left: 10px; */
+/*   z-index: 1000; */
+/* } */
 
 /* Popup styling */
 .leaflet-popup-content-wrapper {
-  border-radius: 6px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow-color);
   padding: 0;
-  overflow: hidden;
 }
 
 .leaflet-popup-content {
   margin: 0;
-  padding: 12px;
-  min-width: 200px;
+  padding: 16px;
+  min-width: 240px;
 }
 
 .popup-loading {
@@ -125,11 +203,12 @@ body {
 
 /* Feature info popup styling */
 .leaflet-popup-content h4 {
-  margin: 0 0 10px 0;
-  padding-bottom: 8px;
+  color: var(--text-color);
   font-size: 16px;
-  border-bottom: 1px solid #eee;
-  color: #2c3e50;
+  font-weight: 500;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .leaflet-popup-content table {
@@ -139,25 +218,101 @@ body {
 
 .leaflet-popup-content table th,
 .leaflet-popup-content table td {
-  padding: 5px;
+  padding: 8px;
   text-align: left;
-  border-bottom: 1px solid #eee;
-  font-size: 13px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
 }
 
 .leaflet-popup-content table th {
-  font-weight: 600;
-  color: #444;
+  color: var(--text-secondary);
+  font-weight: 500;
   width: 40%;
+}
+
+/* Help overlay */
+.help-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.help-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+.help-content h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.help-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+}
+
+.help-content li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.help-content li:last-child {
+  border-bottom: none;
+}
+
+.close-help {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.close-help:hover {
+  background: var(--hover-color);
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    height: auto;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .header-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .nav-button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .nav-button .nav-text {
+    display: none;
+  }
+
+  .help-content {
+    width: 95%;
+    margin: 1rem;
+    padding: 1.5rem;
   }
 
   .debug-controls {
@@ -169,10 +324,10 @@ body {
     height: calc(100vh - 92px); /* Adjust for taller header */
   }
   
-  .layer-control {
-    width: calc(100% - 20px);
-    max-width: 300px;
-  }
+  /* .layer-control { */
+  /*   width: calc(100% - 20px); */
+  /*   max-width: 300px; */
+  /* } */
 }
 
 /* Loading states */
@@ -319,13 +474,6 @@ input, textarea, select {
   background: transparent;
 }
 
-/* Map container styles */
-.map-container {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-}
-
 /* Map loading and error indicators */
 .loading-indicator {
   position: absolute;
@@ -395,4 +543,194 @@ input, textarea, select {
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   border: 5px solid purple !important; /* Temporary prominent border */
+}
+
+/* Map controls */
+.map-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: var(--background-color);
+  padding: 0.5rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.coordinates-display {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-color);
+  padding: 0.25rem 0.5rem;
+  background: var(--surface-color);
+  border-radius: 4px;
+}
+
+.coordinates-display span {
+  white-space: nowrap;
+}
+
+.map-tools {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.map-tool-button {
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+}
+
+.map-tool-button:hover {
+  background: var(--surface-color);
+  border-color: var(--primary-color);
+}
+
+.layer-control-toggle {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1100;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.5rem;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  transition: all 0.2s ease;
+}
+
+.layer-control-toggle:hover {
+  background: var(--background-color);
+  border-color: var(--secondary-color);
+  transform: scale(1.05);
+}
+
+/* Leaflet control customizations */
+.leaflet-control-scale {
+  border: 1px solid var(--border-color) !important;
+  background: var(--background-color) !important;
+  box-shadow: 0 2px 6px var(--shadow-color) !important;
+  border-radius: 4px !important;
+  padding: 4px !important;
+}
+
+.leaflet-control-scale-line {
+  border: 2px solid var(--primary-color) !important;
+  border-top: none !important;
+  color: var(--primary-color) !important;
+  font-size: 0.8rem !important;
+  padding: 2px 5px !important;
+  background: white !important;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 6px var(--shadow-color) !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: var(--background-color) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  font-size: 18px !important;
+  transition: all 0.2s !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: var(--surface-color) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+.leaflet-control-zoom-in {
+  border-bottom: none !important;
+  border-radius: 4px 4px 0 0 !important;
+}
+
+.leaflet-control-zoom-out {
+  border-radius: 0 0 4px 4px !important;
+}
+
+/* Responsive adjustments for map controls */
+@media (max-width: 768px) {
+  .map-controls {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .coordinates-display {
+    flex: 1;
+    justify-content: space-between;
+    font-size: 0.7rem;
+  }
+
+  .map-tools {
+    flex-shrink: 0;
+  }
+
+  .map-tool-button {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+
+  .layer-control-toggle {
+    top: 10px;
+    left: 10px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.3rem;
+  }
+}
+
+/* Styles for the sidebar itself - adjust width based on open/closed state */
+.layer-control-sidebar {
+  /* position: absolute; *//* Remove absolute positioning */
+  /* top: 0; *//* Remove top positioning */
+  /* left: 0; *//* Remove left positioning */
+  height: 100vh; /* Ensure sidebar takes full height */
+  width: 0; /* Start with 0 width */
+  background: var(--background-color);
+  box-shadow: 2px 0 8px var(--shadow-color);
+  border-right: 1px solid var(--border-color);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease; /* Transition width instead of transform */
+  /* transform: translateX(-100%); *//* Remove transform */
+}
+
+.layer-control-sidebar.open {
+  width: 320px; /* Set width when open */
+  /* transform: translateX(0); *//* Remove transform */
+}
+
+.layer-control-sidebar.closed {
+  width: 0; /* Set width when closed */
+  /* transform: translateX(-100%); *//* Remove transform */
 }

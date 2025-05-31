@@ -1,17 +1,8 @@
 import React, { useEffect } from 'react';
 import { GeoJSON, useMap } from 'react-leaflet';
 
-const DatabaseLayers = ({ visibleLayers, layerData, fetchLayerData, onEachFeature }) => {
+const DatabaseLayers = ({ visibleDbLayers, layerData, onEachFeature }) => {
   const map = useMap();
-
-  useEffect(() => {
-    visibleLayers.forEach(layerName => {
-      if (!layerData[layerName]) {
-        const dummyLayer = { table_name: layerName };
-        fetchLayerData(dummyLayer);
-      }
-    });
-  }, [visibleLayers, layerData, fetchLayerData]);
 
   useEffect(() => {
     if (map && Object.keys(layerData).length > 0) {
@@ -75,7 +66,7 @@ const DatabaseLayers = ({ visibleLayers, layerData, fetchLayerData, onEachFeatur
 
   return (
     <>
-      {Array.from(visibleLayers).map(layerName => {
+      {Array.from(visibleDbLayers).map(layerName => {
         const data = layerData[layerName];
         if (!data) return null;
 

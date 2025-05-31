@@ -1,0 +1,54 @@
+.base-layer-switcher {
+  position: absolute;
+  bottom: 80px; /* Position above map controls */
+  left: 20px;
+  z-index: 1000; /* Ensure it's above the map */
+  background: var(--background-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px var(--shadow-color);
+  padding: 4px;
+  min-width: 180px;
+}
+
+.base-layer-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  padding-right: 32px;
+}
+
+.base-layer-select:hover {
+  border-color: var(--primary-color);
+}
+
+.base-layer-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .base-layer-switcher {
+    bottom: 60px; /* Adjust position for smaller screens */
+    left: 10px;
+    min-width: 150px;
+  }
+
+  .base-layer-select {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    padding-right: 30px;
+    background-size: 14px;
+  }
+} 
