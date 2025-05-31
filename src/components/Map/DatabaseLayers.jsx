@@ -15,7 +15,7 @@ const DatabaseLayers = ({ visibleDbLayers, layerData, onEachFeature }) => {
     weight: 1,             // Thinner border
     opacity: 0.8,          // Slightly transparent border
     // fillColor: '#3498db',  // Nice blue for fill
-    fillOpacity: 0.4,      // More transparent fill
+    fillOpacity: 0.2,      // More transparent fill
     dashArray: '3',        // Dashed border
     smoothFactor: 0.5      // Smoother borders
   });

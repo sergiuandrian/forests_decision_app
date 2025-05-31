@@ -32,23 +32,23 @@ export const WMS_LAYERS = [
     checked: false
   },
   {
-    name: "Forest Cover",
-    url: "https://geodata.gov.md/geoserver/moldsilva/wms",
-    layers: "moldsilva:specii_de_baza2025",
+    name: "Small Rivers",
+    url: "http://localhost:8080/geoserver/Moldova/wms",
+    layers: "riuri_mici",
     format: "image/png",
     transparent: true,
-    version: "1.1.1",
+    version: "1.3.0",
     opacity: 0.7,
     zIndex: 20,
     checked: false
   },
   {
-    name: "Protected Areas",
-    url: "https://geodata.gov.md/geoserver/moldsilva/wms",
-    layers: "moldsilva:protected_areas",
+    name: "Lakes",
+    url: "http://localhost:8080/geoserver/Moldova/wms",
+    layers: "lacuri",
     format: "image/png",
     transparent: true,
-    version: "1.1.1",
+    version: "1.3.0",
     opacity: 0.7,
     zIndex: 30,
     checked: false

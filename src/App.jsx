@@ -25,7 +25,7 @@ function App() {
 
         const layers = Array.isArray(response.data) ? response.data : response.data.layers || [];
         const filteredLayers = layers.filter(layer =>
-          layer.table_name === 'hotar' || layer.table_name === 'padure'
+          layer.table_name === 'hotar' || layer.table_name === 'padure' || layer.table_name === 'sol'
         );
 
         setAvailableDbLayers(filteredLayers);
