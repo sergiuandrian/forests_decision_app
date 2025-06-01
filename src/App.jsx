@@ -18,32 +18,38 @@ function App() {
   useEffect(() => {
     const fetchDbLayers = async () => {
       try {
-        console.log("Attempting to fetch available layers...");
-        const response = await api.get('/gis/layers');
-        console.log("Fetched available layers raw response:", response);
-        console.log("Fetched available layers data:", response.data);
-
-        const layers = Array.isArray(response.data) ? response.data : response.data.layers || [];
-        const filteredLayers = layers.filter(layer =>
-          layer.table_name === 'hotar' || layer.table_name === 'padure' || layer.table_name === 'sol'
-        );
-
-        setAvailableDbLayers(filteredLayers);
-
-        const initialVisibleDbLayers = new Set(filteredLayers.map(layer => layer.table_name));
-        setVisibleDbLayers(initialVisibleDbLayers);
-
-        console.log("availableDbLayers and visibleDbLayers states updated.", filteredLayers);
-
-        initialVisibleDbLayers.forEach(layerName => {
-          const layer = filteredLayers.find(l => l.table_name === layerName);
-          if (layer) {
-            fetchLayerData(layer);
+        const response = await api.get('/gis/layers', {
+          headers: {
+            'ngrok-skip-browser-warning': 'true'
           }
         });
 
+        // Explicitly parse response data as JSON, even if Content-Type is not application/json
+        let responseData = response.data;
+
+        console.log("Value of responseData.layers:", responseData.layers);
+
+        const layers = Array.isArray(responseData) ? responseData : responseData.layers || [];
+        
+        const processedLayers = layers.map(layer => {
+          return {
+            ...layer,
+            id: layer.table_name,
+            name: layer.name || layer.table_name
+          };
+        });
+
+        setAvailableDbLayers(processedLayers);
+        console.log("=== State Updates ===");
+        console.log("Setting availableDbLayers to:", processedLayers);
+        
+        const initialVisibleDbLayers = new Set();
+        setVisibleDbLayers(initialVisibleDbLayers);
+        console.log("Setting initialVisibleDbLayers to:", Array.from(initialVisibleDbLayers));
+
       } catch (err) {
-        console.error('Failed to load available layers:', err);
+        setAvailableDbLayers([]);
+        setVisibleDbLayers(new Set());
       }
     };
 
@@ -60,7 +66,12 @@ function App() {
           [layer.table_name]: response.data
         }));
       } catch (err) {
-        console.error(`Error fetching data for ${layer.table_name}:`, err);
+        console.error(`Error fetching data for layer ID ${layer.id}:`, err);
+        setVisibleDbLayers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(layer.id);
+            return newSet;
+        });
       }
     }
   }, [layerData]);
@@ -82,19 +93,27 @@ function App() {
   };
 
   const handleDbLayerChange = (layer) => {
+    console.log('handleDbLayerChange called with layer:', layer);
+    console.log('Current visibleDbLayers:', Array.from(visibleDbLayers));
+    
     setVisibleDbLayers(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(layer.table_name)) {
-        newSet.delete(layer.table_name);
+      console.log('Current visibility for layer.id:', layer.id, 'is:', newSet.has(layer.id));
+      
+      if (newSet.has(layer.id)) {
+        console.log('Removing layer.id:', layer.id);
+        newSet.delete(layer.id);
         setLayerData(prev => {
           const newData = { ...prev };
-          delete newData[layer.table_name];
+          delete newData[layer.id];
           return newData;
         });
       } else {
-        newSet.add(layer.table_name);
+        console.log('Adding layer.id:', layer.id);
+        newSet.add(layer.id);
         fetchLayerData(layer);
       }
+      console.log('New visibleDbLayers:', Array.from(newSet));
       return newSet;
     });
   };

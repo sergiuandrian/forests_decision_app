@@ -94,7 +94,7 @@ const LayerControl = ({
 
   const filteredLayers = useMemo(() => ({
     wms: WMS_LAYERS,
-    db: Array.isArray(availableDbLayers) ? availableDbLayers : []
+    db: Array.isArray(availableDbLayers) ? availableDbLayers.filter(layer => ['padure', 'sol', 'hotar'].includes(layer.table_name)) : [] // Filter DB layers
   }), [availableDbLayers]);
 
   // Placeholder functions for analysis tools
