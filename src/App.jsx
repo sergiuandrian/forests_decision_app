@@ -48,6 +48,7 @@ function App() {
         console.log("Setting initialVisibleDbLayers to:", Array.from(initialVisibleDbLayers));
 
       } catch (err) {
+        console.error('Error fetching database layers:', err);
         setAvailableDbLayers([]);
         setVisibleDbLayers(new Set());
       }

@@ -4,7 +4,8 @@
 
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://c745-188-138-131-244.ngrok-free.app/api';
+// Use environment variable or fallback to localhost for development
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -12,15 +13,37 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'ngrok-skip-browser-warning': 'true'
-  }
+  },
+  timeout: 10000, // 10 second timeout
 });
+
+// Add request interceptor for debugging
+api.interceptors.request.use(
+  config => {
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    return config;
+  },
+  error => {
+    console.error('API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
 
 // Add response interceptor for error handling
 api.interceptors.response.use(
   response => response,
   error => {
     console.error('API Error:', error.response || error);
+    
+    // Handle specific error cases
+    if (error.response?.status === 404) {
+      console.warn('API endpoint not found');
+    } else if (error.response?.status === 500) {
+      console.error('Server error occurred');
+    } else if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout');
+    }
+    
     return Promise.reject(error);
   }
 );

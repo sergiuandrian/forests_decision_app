@@ -5,7 +5,6 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import api from './services/api';
 import { BASE_LAYERS, WMS_LAYERS } from './constants/layers';
 import InitialView from './components/Map/InitialView';
 import DatabaseLayers from './components/Map/DatabaseLayers';
@@ -84,15 +83,14 @@ export default memo(function WebGISMap({
   onEachFeature,
   onBaseLayerChange
 }) {
-  const [error, setError] = useState(null);
-  const [layerOpacities, setLayerOpacities] = useState({});
   const mapRef = useRef(null);
 
   useEffect(() => {
     console.log("Visible DB Layers updated in map.jsx useEffect:", visibleDbLayers);
   }, [visibleDbLayers]);
 
-  const handlePositionChange = (coords) => {
+  const handlePositionChange = () => {
+    // Position change handler - can be extended for analytics or other features
   };
 
   return (
@@ -131,7 +129,7 @@ export default memo(function WebGISMap({
               format={layer.format || "image/png"}
               transparent={true}
               version={layer.version || "1.1.1"}
-              opacity={layerOpacities[layer.name] || 1}
+              opacity={layer.opacity || 1}
               zIndex={layer.zIndex || 10}
             />
           )
@@ -146,7 +144,6 @@ export default memo(function WebGISMap({
         <MapControls onPositionChange={handlePositionChange} />
 
       </MapContainer>
-      {error && <div className="error-message">{error}</div>}
     </div>
   );
 });
