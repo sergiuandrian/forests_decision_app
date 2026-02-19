@@ -18,11 +18,7 @@ function App() {
   useEffect(() => {
     const fetchDbLayers = async () => {
       try {
-        const response = await api.get('/gis/layers', {
-          headers: {
-            'ngrok-skip-browser-warning': 'true'
-          }
-        });
+        const response = await api.get('/gis/layers');
 
         // Explicitly parse response data as JSON, even if Content-Type is not application/json
         let responseData = response.data;
