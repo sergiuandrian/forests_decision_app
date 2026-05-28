@@ -6,9 +6,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
-  // VITE_BASE_PATH=/ on Vercel; /forests_decision_app/ for GitHub Pages (set in deploy workflow)
-  const base =
-    env.VITE_BASE_PATH ?? (mode === 'production' ? '/forests_decision_app/' : '/');
+  // Default base is "/" (works for Vercel and dev).
+  // For GitHub Pages, the deploy workflow sets VITE_BASE_PATH=/forests_decision_app/.
+  const base = env.VITE_BASE_PATH || '/';
 
   return {
     plugins: [react()],
