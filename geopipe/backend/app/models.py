@@ -24,7 +24,7 @@ class Project(Base):
 
 
 class Layer(Base):
-    """A published spatial dataset stored as GeoPackage."""
+    """A published spatial dataset stored in a pluggable spatial backend."""
 
     __tablename__ = "layers"
 
@@ -33,7 +33,11 @@ class Layer(Base):
     name: Mapped[str] = mapped_column(String(200))
     slug: Mapped[str] = mapped_column(String(200), index=True)
     source_filename: Mapped[str] = mapped_column(String(255))
-    gpkg_path: Mapped[str] = mapped_column(String(500))
+    backend: Mapped[str] = mapped_column(String(32), default="geopackage")
+    storage_uri: Mapped[str] = mapped_column(String(500))
+    table_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    # Legacy alias kept for older rows / local smoke artifacts.
+    gpkg_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     crs: Mapped[str] = mapped_column(String(64), default="EPSG:4326")
     geometry_type: Mapped[str] = mapped_column(String(64), default="Unknown")
     feature_count: Mapped[int] = mapped_column(Integer, default=0)

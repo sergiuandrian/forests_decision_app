@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.config import get_settings
 from app.models import ApiKey, Layer, Project, UsageEvent
 from app.services import ingest, spatial
 
@@ -35,6 +36,8 @@ async def health() -> dict[str, str]:
 @router.get("/bootstrap")
 async def bootstrap(db: Annotated[AsyncSession, Depends(get_db)]) -> dict:
     """Ensure default project exists and return dashboard bootstrap payload."""
+    from app.storage.registry import list_backends
+
     project = await ingest.ensure_default_project(db)
     api_key = await ingest.get_project_api_key(db, project.id)
     layers_result = await db.execute(select(Layer).where(Layer.project_id == project.id).order_by(Layer.created_at.desc()))
@@ -49,6 +52,8 @@ async def bootstrap(db: Annotated[AsyncSession, Depends(get_db)]) -> dict:
         "api_key_prefix": api_key.key_prefix if api_key else None,
         "api_key": bootstrap_key,
         "usage": {"requests": used, "limit": 10_000},
+        "backends": list_backends(),
+        "default_backend": get_settings().spatial_backend,
         "layers": [spatial.layer_to_dict(layer) for layer in layers],
     }
 
@@ -93,16 +98,34 @@ async def list_layers(
     return {"layers": [spatial.layer_to_dict(layer) for layer in layers]}
 
 
+@router.get("/backends")
+async def backends() -> dict:
+    """List spatial database backends and availability."""
+    from app.storage.registry import list_backends
+
+    return {
+        "default": get_settings().spatial_backend,
+        "backends": list_backends(),
+    }
+
+
 @router.post("/layers")
 async def upload_layer(
     db: Annotated[AsyncSession, Depends(get_db)],
     project_auth: Annotated[tuple[Project, ApiKey | None], Depends(require_project)],
     file: UploadFile = File(...),
     name: str | None = Form(default=None),
+    backend: str | None = Form(default=None),
 ) -> dict:
     """Upload and publish a spatial file as a layer."""
     project, api_key = project_auth
-    layer = await ingest.ingest_upload(db, project=project, upload=file, layer_name=name)
+    layer = await ingest.ingest_upload(
+        db,
+        project=project,
+        upload=file,
+        layer_name=name,
+        backend_name=backend,
+    )
     await ingest.record_usage(
         db,
         project_id=project.id,

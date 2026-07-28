@@ -184,8 +184,11 @@ async def ingest_upload(
     project: Project,
     upload: UploadFile,
     layer_name: str | None = None,
+    backend_name: str | None = None,
 ) -> Layer:
-    """Validate an upload and persist it as a GeoPackage-backed layer."""
+    """Validate an upload and persist it through a spatial backend."""
+    from app.storage.registry import get_backend
+
     filename = upload.filename or "upload.geojson"
     suffix = Path(filename).suffix.lower()
     if suffix not in {".geojson", ".json", ".gpkg", ".zip", ".shp"}:
@@ -204,18 +207,22 @@ async def ingest_upload(
     raw_path.write_bytes(content)
 
     gdf = read_spatial_file(raw_path)
-    gpkg_path = settings.data_dir / f"{layer_id}.gpkg"
-    gdf.to_file(gpkg_path, driver="GPKG")
+    name = layer_name or Path(filename).stem
+    slug = slugify(name)
+    backend = get_backend(backend_name)
+    ref = backend.write_layer(layer_id, gdf, slug=slug)
 
     bounds = gdf.total_bounds
-    name = layer_name or Path(filename).stem
     layer = Layer(
         id=layer_id,
         project_id=project.id,
         name=name,
-        slug=slugify(name),
+        slug=slug,
         source_filename=filename,
-        gpkg_path=str(gpkg_path),
+        backend=ref.backend,
+        storage_uri=ref.uri,
+        table_name=ref.table_name,
+        gpkg_path=ref.uri if ref.backend == "geopackage" else None,
         crs=settings.default_crs,
         geometry_type=str(gdf.geom_type.value_counts().index[0]),
         feature_count=len(gdf),
@@ -231,11 +238,7 @@ async def ingest_upload(
 
 
 def load_layer_gdf(layer: Layer) -> gpd.GeoDataFrame:
-    """Load a layer GeoPackage from disk."""
-    path = Path(layer.gpkg_path)
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="Layer data file missing")
-    gdf = gpd.read_file(path)
-    if gdf.crs is None:
-        gdf = gdf.set_crs(settings.default_crs)
-    return gdf
+    """Load a layer from its configured spatial backend."""
+    from app.storage.registry import read_layer_gdf
+
+    return read_layer_gdf(layer)

@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     max_upload_mb: int = 50
     free_request_limit: int = 10_000
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    # Spatial stores: geopackage | duckdb | spatialite | postgis
+    spatial_backend: str = "geopackage"
+    postgis_url: str | None = None
+    # Public base URL used in agent connector snippets
+    public_base_url: str = "http://127.0.0.1:8000"
+    mcp_server_name: str = "geopipe"
 
 
 @lru_cache

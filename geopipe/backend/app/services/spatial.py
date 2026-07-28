@@ -20,6 +20,8 @@ def layer_to_dict(layer: Layer) -> dict[str, Any]:
         "id": layer.id,
         "name": layer.name,
         "slug": layer.slug,
+        "backend": getattr(layer, "backend", None) or "geopackage",
+        "table_name": getattr(layer, "table_name", None),
         "crs": layer.crs,
         "geometry_type": layer.geometry_type,
         "feature_count": layer.feature_count,

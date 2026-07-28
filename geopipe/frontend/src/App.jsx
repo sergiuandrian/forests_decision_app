@@ -8,6 +8,8 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null)
   const [geojson, setGeojson] = useState(null)
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('geopipe_api_key') || '')
+  const [backend, setBackend] = useState(() => localStorage.getItem('geopipe_backend') || 'geopackage')
+  const [connectors, setConnectors] = useState(null)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -21,6 +23,9 @@ export default function App() {
     const data = await api('/v1/bootstrap')
     setBootstrap(data)
     setLayers(data.layers || [])
+    if (data.default_backend && !localStorage.getItem('geopipe_backend')) {
+      setBackend(data.default_backend)
+    }
     if (data.api_key) {
       setApiKey(data.api_key)
       localStorage.setItem('geopipe_api_key', data.api_key)
@@ -44,22 +49,30 @@ export default function App() {
       .catch((err) => setError(err.message))
   }, [selectedId, apiKey])
 
+  useEffect(() => {
+    if (!apiKey) return
+    api('/v1/agents/connectors', { apiKey })
+      .then(setConnectors)
+      .catch(() => setConnectors(null))
+  }, [apiKey])
+
   async function onUpload(event) {
     const file = event.target.files?.[0]
     if (!file) return
     setBusy(true)
     setError('')
-    setStatus('Uploading and validating…')
+    setStatus(`Uploading into ${backend}…`)
     try {
       const body = new FormData()
       body.append('file', file)
       body.append('name', file.name.replace(/\.[^.]+$/, ''))
+      body.append('backend', backend)
       const layer = await api('/v1/layers', {
         method: 'POST',
         body,
         apiKey: apiKey || undefined,
       })
-      setStatus(`Published ${layer.name} (${layer.feature_count} features)`)
+      setStatus(`Published ${layer.name} on ${layer.backend} (${layer.feature_count} features)`)
       await refresh()
       setSelectedId(layer.id)
     } catch (err) {
@@ -89,6 +102,12 @@ export default function App() {
     }
   }
 
+  function onBackendChange(event) {
+    const value = event.target.value
+    setBackend(value)
+    localStorage.setItem('geopipe_backend', value)
+  }
+
   const mapCenter = selected?.bbox
     ? [(selected.bbox[1] + selected.bbox[3]) / 2, (selected.bbox[0] + selected.bbox[2]) / 2]
     : [48.85, 2.35]
@@ -98,16 +117,35 @@ export default function App() {
       <header className="hero">
         <div>
           <p className="brand">GeoPipe</p>
-          <h1>Spatial data in. API + MCP out.</h1>
+          <h1>Any spatial DB. Any AI agent.</h1>
           <p className="lede">
-            Upload GeoJSON, GeoPackage, or Shapefile. Get authenticated features, vector tiles,
-            and agent-ready spatial tools.
+            Upload GeoJSON, GeoPackage, or Shapefile into GeoPackage, DuckDB, SpatiaLite, or
+            PostGIS. Serve features, tiles, and tools over MCP HTTP/stdio/SSE or OpenAI-compatible
+            function calling.
           </p>
         </div>
-        <label className={`upload ${busy ? 'disabled' : ''}`}>
-          <input type="file" accept=".geojson,.json,.gpkg,.zip" onChange={onUpload} disabled={busy} />
-          Upload layer
-        </label>
+        <div className="hero-actions">
+          <label className="backend">
+            Backend
+            <select value={backend} onChange={onBackendChange}>
+              {(bootstrap?.backends || [
+                { name: 'geopackage', available: true },
+                { name: 'duckdb', available: true },
+                { name: 'spatialite', available: true },
+                { name: 'postgis', available: false },
+              ]).map((item) => (
+                <option key={item.name} value={item.name} disabled={!item.available}>
+                  {item.name}
+                  {!item.available ? ' (unavailable)' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={`upload ${busy ? 'disabled' : ''}`}>
+            <input type="file" accept=".geojson,.json,.gpkg,.zip" onChange={onUpload} disabled={busy} />
+            Upload layer
+          </label>
+        </div>
       </header>
 
       <section className="grid">
@@ -145,7 +183,7 @@ export default function App() {
                 >
                   <strong>{layer.name}</strong>
                   <span>
-                    {layer.feature_count} · {layer.geometry_type}
+                    {layer.backend || 'geopackage'} · {layer.feature_count} · {layer.geometry_type}
                   </span>
                 </button>
               </li>
@@ -159,7 +197,18 @@ export default function App() {
               <code>GET {selected.endpoints.features}</code>
               <code>GET {selected.endpoints.tiles}</code>
               <code>GET /v1/mcp/tools</code>
-              <code>POST /v1/mcp/tools/query_features</code>
+              <code>GET /v1/agents/tools</code>
+              <code>POST /v1/mcp/messages</code>
+            </div>
+          )}
+
+          {connectors && (
+            <div className="endpoints">
+              <h2>Agent connectors</h2>
+              <code>HTTP tools: {connectors.http.tools_url}</code>
+              <code>OpenAI tools: {connectors.openai_compatible.tools_url}</code>
+              <code>MCP SSE: {connectors.mcp_sse.url}</code>
+              <code>MCP stdio: python -m app.mcp.stdio_server</code>
             </div>
           )}
 

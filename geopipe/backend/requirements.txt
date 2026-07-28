@@ -13,3 +13,7 @@ sqlalchemy>=2.0.36
 aiosqlite>=0.20.0
 sse-starlette>=2.1.0
 email-validator>=2.2.0
+duckdb>=1.1.0
+psycopg[binary]>=3.2.0
+geoalchemy2>=0.15.0
+mcp>=1.0.0
