@@ -27,16 +27,29 @@ Upload spatial data. Get a Feature API, vector tiles, and MCP tools for AI agent
 ## Quick start
 
 ```bash
+# API (http://localhost:8000/docs)
 cd geopipe/backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+PYTHONPATH=. uvicorn app.main:app --reload --port 8000
 ```
 
 ```bash
+# UI (http://localhost:5173)
 cd geopipe/frontend
 npm install && npm run dev
 ```
 
-API docs: http://localhost:8000/docs  
-App: http://localhost:5173
+Sample upload: `geopipe/sample-data/paris-sites.geojson`
+
+### MCP HTTP tools
+
+```bash
+curl http://localhost:8000/v1/mcp/tools
+curl -X POST http://localhost:8000/v1/mcp/tools/list_layers \
+  -H "X-API-Key: $GEOPIPE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Tools: `list_layers`, `query_features`, `layer_stats`, `buffer`, `intersect`, `crs_transform`
