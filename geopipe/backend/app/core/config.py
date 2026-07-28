@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     app_name: str = "GeoPipe"
     api_prefix: str = "/v1"
     database_url: str = "sqlite+aiosqlite:///./geopipe.db"
-    data_dir: Path = Path(__file__).resolve().parents[2] / "data"
-    upload_dir: Path = Path(__file__).resolve().parents[2] / "uploads"
+    data_dir: Path = Path(__file__).resolve().parents[3] / "data"
+    upload_dir: Path = Path(__file__).resolve().parents[3] / "uploads"
     default_crs: str = "EPSG:4326"
     max_upload_mb: int = 50
     free_request_limit: int = 10_000
