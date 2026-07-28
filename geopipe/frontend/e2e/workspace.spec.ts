@@ -6,6 +6,8 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const samplePath = path.join(root, 'sample-data', 'paris-sites.geojson')
 
 test.describe('GeoPipe workspace', () => {
+  test.describe.configure({ mode: 'serial' })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
     await expect(page.getByTestId('brand')).toBeVisible()
@@ -23,8 +25,9 @@ test.describe('GeoPipe workspace', () => {
   test('publishes a sample layer and frames it on the map', async ({ page }) => {
     await page.getByTestId('upload-input').setInputFiles(samplePath)
 
-    const layerButton = page.getByTestId('layer-list').getByRole('button').filter({ hasText: 'paris-sites' })
-    await expect(layerButton.first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByTestId('layer-list').getByRole('button').filter({ hasText: 'paris-sites' }).first()).toBeVisible({
+      timeout: 20_000,
+    })
     await expect(page.getByTestId('layer-detail')).toBeVisible()
     await expect(page.getByTestId('layer-detail')).toContainText(/Point|Polygon|Mixed/i)
     await expect(page.getByTestId('empty-state')).toHaveCount(0)

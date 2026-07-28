@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react'
 import * as maplibregl from 'maplibre-gl'
+import { setWorkerUrl } from 'maplibre-gl'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { resolveMapStyle } from '../lib/mapStyle'
+
+setWorkerUrl(workerUrl)
 
 const SOURCE_ID = 'geopipe-layer'
 const FILL_ID = 'geopipe-fill'
@@ -62,8 +66,11 @@ export default function MapCanvas({ geojson, bbox, empty }) {
       if (current.geojson?.features?.length) {
         const bounds = boundsFromBboxOrGeojson(current.bbox, current.geojson)
         if (bounds) {
+          const narrow = window.innerWidth < 980
           map.fitBounds(bounds, {
-            padding: { top: 96, bottom: 120, left: 48, right: 420 },
+            padding: narrow
+              ? { top: 88, bottom: 140, left: 28, right: 28 }
+              : { top: 96, bottom: 120, left: 48, right: 420 },
             maxZoom: 13.5,
             duration: 1100,
           })

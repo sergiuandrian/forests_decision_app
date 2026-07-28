@@ -9,4 +9,13 @@ export default defineConfig({
       '/v1': 'http://127.0.0.1:8000',
     },
   },
+  worker: {
+    format: 'es',
+  },
+  optimizeDeps: {
+    exclude: ['maplibre-gl'],
+  },
+  build: {
+    chunkSizeWarningLimit: 1600,
+  },
 })
