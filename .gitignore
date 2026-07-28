@@ -31,3 +31,15 @@ Thumbs.db
 
 # Local files
 *.local
+
+# GeoPipe local runtime
+geopipe/backend/.venv/
+geopipe/backend/geopipe.db
+geopipe/backend/**/__pycache__/
+geopipe/data/*
+!geopipe/data/.gitkeep
+geopipe/data/.bootstrap_api_key
+geopipe/uploads/*
+!geopipe/uploads/.gitkeep
+geopipe/frontend/node_modules/
+geopipe/frontend/dist/

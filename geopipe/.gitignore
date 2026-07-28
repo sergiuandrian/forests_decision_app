@@ -1,0 +1,14 @@
+backend/.venv/
+backend/geopipe.db
+backend/**/__pycache__/
+backend/data/
+backend/uploads/
+backend/*.db
+*.db
+data/*
+!data/.gitkeep
+data/.bootstrap_api_key
+uploads/*
+!uploads/.gitkeep
+frontend/node_modules/
+frontend/dist/
