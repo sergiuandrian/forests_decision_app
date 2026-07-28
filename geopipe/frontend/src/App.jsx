@@ -1,21 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
 import { api } from './lib/api'
 import { copyText } from './lib/clipboard'
-import FitBounds from './components/FitBounds'
+import MapCanvas from './components/MapCanvas'
 
 const TABS = [
   { id: 'layers', label: 'Layers' },
   { id: 'connect', label: 'Connect' },
   { id: 'api', label: 'API' },
 ]
-
-const LAYER_STYLE = {
-  color: '#0F766E',
-  weight: 2,
-  fillColor: '#14B8A6',
-  fillOpacity: 0.35,
-}
 
 export default function App() {
   const [bootstrap, setBootstrap] = useState(null)
@@ -31,6 +23,7 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [copied, setCopied] = useState('')
+  const [dockOpen, setDockOpen] = useState(true)
 
   const selected = useMemo(
     () => layers.find((layer) => layer.id === selectedId) || null,
@@ -38,6 +31,7 @@ export default function App() {
   )
 
   const backends = bootstrap?.backends || []
+  const empty = !selected
 
   const refresh = useCallback(async () => {
     const data = await api('/v1/bootstrap')
@@ -101,6 +95,7 @@ export default function App() {
       })
       setStatus(`${layer.name} live on ${layer.backend}`)
       setTab('layers')
+      setDockOpen(true)
       await refresh()
       setSelectedId(layer.id)
     } catch (err) {
@@ -142,245 +137,242 @@ export default function App() {
     publishFile(file)
   }
 
-  const mapCenter = selected?.bbox
-    ? [(selected.bbox[1] + selected.bbox[3]) / 2, (selected.bbox[0] + selected.bbox[2]) / 2]
-    : [20, 0]
-
   const stdioSnippet = connectors
     ? JSON.stringify(connectors.mcp_stdio.mcpServers, null, 2)
     : ''
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <div className="brand-block">
-          <p className="brand">GeoPipe</p>
+    <div className={`shell ${dockOpen ? 'dock-open' : 'dock-closed'}`}>
+      <section
+        className={`map-stage ${dragging ? 'dragging' : ''}`}
+        onDragEnter={(event) => {
+          event.preventDefault()
+          setDragging(true)
+        }}
+        onDragOver={(event) => event.preventDefault()}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+      >
+        <MapCanvas geojson={geojson} bbox={selected?.bbox} empty={empty} />
+
+        <header className="brand-overlay">
+          <p className="brand" data-testid="brand">
+            GeoPipe
+          </p>
           <p className="tagline">Spatial API for databases and agents</p>
-        </div>
-        <div className="topbar-meta">
+        </header>
+
+        <div className="usage-overlay" aria-live="polite">
           {bootstrap && (
-            <span className="chip">
-              {bootstrap.usage.requests}/{bootstrap.usage.limit} requests
+            <span className="meta-chip" data-testid="usage-chip">
+              {bootstrap.usage.requests}/{bootstrap.usage.limit}
             </span>
           )}
-          <span className="chip muted">{bootstrap?.project.plan || 'free'}</span>
+          <span className="meta-chip tone">{bootstrap?.project.plan || 'free'}</span>
         </div>
-      </header>
 
-      <section className="stage">
-        <div
-          className={`map-stage ${dragging ? 'dragging' : ''}`}
-          onDragEnter={(event) => {
-            event.preventDefault()
-            setDragging(true)
-          }}
-          onDragOver={(event) => event.preventDefault()}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-        >
-          <MapContainer
-            center={mapCenter}
-            zoom={selected ? 11 : 2}
-            className="map"
-            key={selectedId || 'empty'}
-            zoomControl={false}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        {empty && (
+          <div className="map-empty" data-testid="empty-state">
+            <p className="brand">GeoPipe</p>
+            <h1>Publish spatial data in one drop</h1>
+            <p>GeoJSON, GeoPackage, or Shapefile ZIP → Feature API, tiles, and agent tools.</p>
+          </div>
+        )}
+
+        <div className="publish-bar" data-testid="publish-bar">
+          <label className="field">
+            <span>Store in</span>
+            <select value={backend} onChange={onBackendChange} aria-label="Spatial backend">
+              {(backends.length
+                ? backends
+                : [
+                    { name: 'geopackage', available: true },
+                    { name: 'duckdb', available: true },
+                    { name: 'spatialite', available: true },
+                    { name: 'postgis', available: false },
+                  ]
+              ).map((item) => (
+                <option key={item.name} value={item.name} disabled={!item.available}>
+                  {item.name}
+                  {!item.available ? ' · setup needed' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={`upload ${busy ? 'disabled' : ''}`}>
+            <input
+              type="file"
+              accept=".geojson,.json,.gpkg,.zip"
+              disabled={busy}
+              data-testid="upload-input"
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                publishFile(file)
+                event.target.value = ''
+              }}
             />
-            {geojson && (
-              <>
-                <GeoJSON data={geojson} style={() => LAYER_STYLE} />
-                <FitBounds geojson={geojson} />
-              </>
-            )}
-          </MapContainer>
+            {busy ? 'Publishing…' : 'Upload layer'}
+          </label>
+          <button
+            type="button"
+            className="dock-toggle"
+            aria-expanded={dockOpen}
+            aria-controls="workspace-dock"
+            onClick={() => setDockOpen((value) => !value)}
+          >
+            {dockOpen ? 'Hide panel' : 'Show panel'}
+          </button>
+        </div>
+      </section>
 
-          {!selected && (
-            <div className="map-empty">
-              <p className="brand">GeoPipe</p>
-              <h1>Drop a spatial file to publish</h1>
-              <p>GeoJSON, GeoPackage, or Shapefile ZIP → Feature API, tiles, and agent tools.</p>
+      <aside
+        id="workspace-dock"
+        className={`dock ${dockOpen ? 'open' : ''}`}
+        aria-label="Workspace"
+        data-testid="workspace-dock"
+      >
+        <nav className="tabs" aria-label="Workspace sections">
+          {TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={tab === item.id ? 'active' : ''}
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="dock-body">
+          {tab === 'layers' && (
+            <div className="panel-block fade-in">
+              <h2>Published layers</h2>
+              <ul className="layer-list" data-testid="layer-list">
+                {layers.map((layer) => (
+                  <li key={layer.id}>
+                    <button
+                      type="button"
+                      className={layer.id === selectedId ? 'active' : ''}
+                      onClick={() => setSelectedId(layer.id)}
+                    >
+                      <strong>{layer.name}</strong>
+                      <span>
+                        {layer.backend} · {layer.feature_count} features · {layer.geometry_type}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+                {!layers.length && (
+                  <li className="empty">No layers yet. Upload or drop a file on the map.</li>
+                )}
+              </ul>
+
+              {selected && (
+                <div className="detail" data-testid="layer-detail">
+                  <h2>Selected</h2>
+                  <dl className="meta">
+                    <div>
+                      <dt>Backend</dt>
+                      <dd>{selected.backend}</dd>
+                    </div>
+                    <div>
+                      <dt>Features</dt>
+                      <dd>{selected.feature_count}</dd>
+                    </div>
+                    <div className="wide">
+                      <dt>Geometry</dt>
+                      <dd>{selected.geometry_type}</dd>
+                    </div>
+                  </dl>
+                  <CopyRow
+                    label="Features URL"
+                    value={selected.endpoints.features}
+                    copied={copied}
+                    onCopy={flashCopy}
+                  />
+                  <CopyRow
+                    label="Tiles URL"
+                    value={selected.endpoints.tiles}
+                    copied={copied}
+                    onCopy={flashCopy}
+                  />
+                </div>
+              )}
             </div>
           )}
 
-          <div className="publish-bar">
-            <label className="field">
-              <span>Store in</span>
-              <select value={backend} onChange={onBackendChange} aria-label="Spatial backend">
-                {(backends.length
-                  ? backends
-                  : [
-                      { name: 'geopackage', available: true },
-                      { name: 'duckdb', available: true },
-                      { name: 'spatialite', available: true },
-                      { name: 'postgis', available: false },
-                    ]
-                ).map((item) => (
-                  <option key={item.name} value={item.name} disabled={!item.available}>
-                    {item.name}
-                    {!item.available ? ' · setup needed' : ''}
-                  </option>
+          {tab === 'connect' && (
+            <div className="panel-block fade-in" data-testid="connect-panel">
+              <h2>Connect any AI agent</h2>
+              <p className="help">
+                Same tools over MCP HTTP/stdio/SSE or OpenAI-compatible function calling.
+              </p>
+              {connectors ? (
+                <>
+                  <CopyRow
+                    label="MCP HTTP tools"
+                    value={connectors.http.tools_url}
+                    copied={copied}
+                    onCopy={flashCopy}
+                  />
+                  <CopyRow
+                    label="OpenAI tools"
+                    value={connectors.openai_compatible.tools_url}
+                    copied={copied}
+                    onCopy={flashCopy}
+                  />
+                  <CopyRow
+                    label="MCP SSE"
+                    value={connectors.mcp_sse.url}
+                    copied={copied}
+                    onCopy={flashCopy}
+                  />
+                  <div className="snippet">
+                    <div className="snippet-head">
+                      <span>MCP stdio config</span>
+                      <button type="button" onClick={() => flashCopy('stdio config', stdioSnippet)}>
+                        {copied === 'stdio config' ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+                    <pre>{stdioSnippet}</pre>
+                  </div>
+                </>
+              ) : (
+                <p className="empty">Load an API key to generate connector snippets.</p>
+              )}
+            </div>
+          )}
+
+          {tab === 'api' && (
+            <div className="panel-block fade-in" data-testid="api-panel">
+              <h2>API key</h2>
+              <p className="help">Send as `X-API-Key` for features, tiles, and agent tools.</p>
+              <CopyRow label="API key" value={apiKey || 'Unavailable'} copied={copied} onCopy={flashCopy} />
+              <button type="button" className="secondary" onClick={rotateKey} disabled={busy}>
+                Rotate key
+              </button>
+
+              <h2>Backends</h2>
+              <ul className="backend-list" data-testid="backend-list">
+                {backends.map((item) => (
+                  <li key={item.name} className={item.available ? 'ok' : 'off'}>
+                    <strong>{item.name}</strong>
+                    <span>{item.message}</span>
+                  </li>
                 ))}
-              </select>
-            </label>
-            <label className={`upload ${busy ? 'disabled' : ''}`}>
-              <input
-                type="file"
-                accept=".geojson,.json,.gpkg,.zip"
-                disabled={busy}
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  publishFile(file)
-                  event.target.value = ''
-                }}
-              />
-              {busy ? 'Publishing…' : 'Upload layer'}
-            </label>
-          </div>
+              </ul>
+            </div>
+          )}
         </div>
 
-        <aside className="dock" aria-label="Workspace">
-          <nav className="tabs" aria-label="Workspace sections">
-            {TABS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={tab === item.id ? 'active' : ''}
-                onClick={() => setTab(item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-
-          <div className="dock-body">
-            {tab === 'layers' && (
-              <div className="panel-block fade-in">
-                <h2>Published layers</h2>
-                <ul className="layer-list">
-                  {layers.map((layer) => (
-                    <li key={layer.id}>
-                      <button
-                        type="button"
-                        className={layer.id === selectedId ? 'active' : ''}
-                        onClick={() => setSelectedId(layer.id)}
-                      >
-                        <strong>{layer.name}</strong>
-                        <span>
-                          {layer.backend} · {layer.feature_count} features · {layer.geometry_type}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                  {!layers.length && (
-                    <li className="empty">No layers yet. Upload or drop a file on the map.</li>
-                  )}
-                </ul>
-
-                {selected && (
-                  <div className="detail">
-                    <h2>Selected</h2>
-                    <dl className="meta">
-                      <div>
-                        <dt>Backend</dt>
-                        <dd>{selected.backend}</dd>
-                      </div>
-                      <div>
-                        <dt>Features</dt>
-                        <dd>{selected.feature_count}</dd>
-                      </div>
-                    </dl>
-                    <CopyRow
-                      label="Features URL"
-                      value={selected.endpoints.features}
-                      copied={copied}
-                      onCopy={flashCopy}
-                    />
-                    <CopyRow
-                      label="Tiles URL"
-                      value={selected.endpoints.tiles}
-                      copied={copied}
-                      onCopy={flashCopy}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {tab === 'connect' && (
-              <div className="panel-block fade-in">
-                <h2>Connect any AI agent</h2>
-                <p className="help">
-                  Same tools over MCP HTTP/stdio/SSE or OpenAI-compatible function calling.
-                </p>
-                {connectors ? (
-                  <>
-                    <CopyRow
-                      label="MCP HTTP tools"
-                      value={connectors.http.tools_url}
-                      copied={copied}
-                      onCopy={flashCopy}
-                    />
-                    <CopyRow
-                      label="OpenAI tools"
-                      value={connectors.openai_compatible.tools_url}
-                      copied={copied}
-                      onCopy={flashCopy}
-                    />
-                    <CopyRow
-                      label="MCP SSE"
-                      value={connectors.mcp_sse.url}
-                      copied={copied}
-                      onCopy={flashCopy}
-                    />
-                    <div className="snippet">
-                      <div className="snippet-head">
-                        <span>MCP stdio config</span>
-                        <button type="button" onClick={() => flashCopy('stdio config', stdioSnippet)}>
-                          {copied === 'stdio config' ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-                      <pre>{stdioSnippet}</pre>
-                    </div>
-                  </>
-                ) : (
-                  <p className="empty">Load an API key to generate connector snippets.</p>
-                )}
-              </div>
-            )}
-
-            {tab === 'api' && (
-              <div className="panel-block fade-in">
-                <h2>API key</h2>
-                <p className="help">Send as `X-API-Key` for features, tiles, and agent tools.</p>
-                <CopyRow label="API key" value={apiKey || 'Unavailable'} copied={copied} onCopy={flashCopy} />
-                <button type="button" className="secondary" onClick={rotateKey} disabled={busy}>
-                  Rotate key
-                </button>
-
-                <h2>Backends</h2>
-                <ul className="backend-list">
-                  {backends.map((item) => (
-                    <li key={item.name} className={item.available ? 'ok' : 'off'}>
-                      <strong>{item.name}</strong>
-                      <span>{item.message}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+        {(status || error) && (
+          <div className="toast-row" data-testid="toast-row">
+            {status && <p className="status">{status}</p>}
+            {error && <p className="error">{error}</p>}
           </div>
-
-          {(status || error) && (
-            <div className="toast-row">
-              {status && <p className="status">{status}</p>}
-              {error && <p className="error">{error}</p>}
-            </div>
-          )}
-        </aside>
-      </section>
+        )}
+      </aside>
     </div>
   )
 }
@@ -390,7 +382,7 @@ function CopyRow({ label, value, copied, onCopy }) {
     <div className="copy-row">
       <div>
         <span className="copy-label">{label}</span>
-        <code>{value}</code>
+        <code title={value}>{value}</code>
       </div>
       <button type="button" onClick={() => onCopy(label, value)} disabled={!value || value === 'Unavailable'}>
         {copied === label ? 'Copied' : 'Copy'}

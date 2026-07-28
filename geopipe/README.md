@@ -38,6 +38,22 @@ cd geopipe/frontend
 npm install && npm run dev
 ```
 
+Frontend map engine is **MapLibre GL** (Mapbox-class vector rendering). Optional:
+
+```bash
+# Use Mapbox Light tiles
+export VITE_MAPBOX_TOKEN=pk....
+# Or point at any MapLibre style URL
+export VITE_MAP_STYLE=https://basemaps.cartocdn.com/gl/positron-gl-style/style.json
+```
+
+UI checks:
+
+```bash
+cd geopipe/frontend
+npm run test:e2e
+```
+
 Optional PostGIS:
 
 ```bash

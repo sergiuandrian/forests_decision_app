@@ -25,6 +25,18 @@ def slugify(value: str) -> str:
     return slug or "layer"
 
 
+def _summarize_geometry_types(gdf: gpd.GeoDataFrame) -> str:
+    """Return a compact geometry label, using Mixed when types vary."""
+    types = sorted({str(value) for value in gdf.geom_type.dropna().unique()})
+    if not types:
+        return "Unknown"
+    if len(types) == 1:
+        return types[0]
+    if len(types) <= 3:
+        return ", ".join(types)
+    return "Mixed"
+
+
 def hash_api_key(raw_key: str) -> str:
     """Hash an API key for storage."""
     return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
@@ -224,7 +236,7 @@ async def ingest_upload(
         table_name=ref.table_name,
         gpkg_path=ref.uri if ref.backend == "geopackage" else None,
         crs=settings.default_crs,
-        geometry_type=str(gdf.geom_type.value_counts().index[0]),
+        geometry_type=_summarize_geometry_types(gdf),
         feature_count=len(gdf),
         bbox_west=float(bounds[0]),
         bbox_south=float(bounds[1]),
