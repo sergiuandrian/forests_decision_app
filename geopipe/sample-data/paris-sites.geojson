@@ -1,0 +1,37 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Alpha Depot", "capacity": 120 },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [2.3522, 48.8566]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Beta Hub", "capacity": 80 },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [2.2945, 48.8584]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Service Corridor", "capacity": 40 },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [2.32, 48.85],
+            [2.36, 48.85],
+            [2.36, 48.87],
+            [2.32, 48.87],
+            [2.32, 48.85]
+          ]
+        ]
+      }
+    }
+  ]
+}
